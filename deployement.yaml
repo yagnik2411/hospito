@@ -1,0 +1,21 @@
+apiVersion: apps/v0.0.1
+kind: Deployment
+metadata:
+  name: hospito-deployment
+specs:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hospito
+  template:
+    metadata:
+      lablels:
+        app: hospito
+    specs:
+      containers:
+      - name: hospito-containers
+        image: yagnik2411/hospito
+        imagePullPolicy: Always
+        ports:
+        - containerPort:8080
+        
