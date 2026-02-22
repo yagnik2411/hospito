@@ -8,25 +8,19 @@ import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
-// @Service
-// @RequiredArgsConstructor
+@Service
+@RequiredArgsConstructor
 public class PatientService {
 
-  private PatientRepository patientRepository;
-    @Transactional
-  public Patient getPatientById(Long Id) {
+  private final PatientRepository patientRepository;
 
-    Patient p1 = patientRepository.findById(Id)
-        .orElseThrow(() -> new RuntimeException("Patient with id " + Id + " not found."));
-
-    // System.out.println(p1);
-    Patient p2 = patientRepository.findById(Id)
-        .orElseThrow(() -> new RuntimeException("Patient with id " + Id + " not found."));
-    // System.out.println(p2);
-    return p1;
+  @Transactional
+  public Patient getPatientById(Long id) {
+    return patientRepository.findById(id)
+        .orElseThrow(() -> new RuntimeException("Patient with id " + id + " not found."));
   }
-	public Patient getPatientByName(String string) {
-		return null;
-	}
 
+  public Patient getPatientByName(String name) {
+    return patientRepository.getPatientByName(name);
+  }
 }

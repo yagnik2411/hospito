@@ -10,21 +10,21 @@ import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
-// @Service
-//   @RequiredArgsConstructor
+@Service
+@RequiredArgsConstructor
 public class InsuranceService {
 
-  private InsuranceRepository insuranceRepository;
-  private PatientRepository patientRepository;
+  private final InsuranceRepository insuranceRepository;
+  private final PatientRepository patientRepository;
 
   @Transactional
-  public Patient assignInsuranceToPatient(Insurance insurance,Long patientId){
-    Patient patient= patientRepository.findById(patientId).orElseThrow();
+  public Patient assignInsuranceToPatient(Insurance insurance, Long patientId) {
+    Patient patient = patientRepository.findById(patientId)
+        .orElseThrow(() -> new RuntimeException("Patient with id " + patientId + " not found."));
 
     patient.setInsurance(insurance);
     insurance.setPatient(patient);
 
-    return patient;
+    return patientRepository.save(patient);
   }
-
 }
