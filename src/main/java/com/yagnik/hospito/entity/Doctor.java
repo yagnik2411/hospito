@@ -8,6 +8,8 @@ import java.util.Set;
 
 import org.hibernate.annotations.CreationTimestamp;
 
+import com.yagnik.hospito.common.entity.AuditableEntity;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -30,7 +32,7 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Doctor {
+public class Doctor extends AuditableEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,10 +46,6 @@ public class Doctor {
 
   @Column(length = 10, nullable = false, unique = true)
   private String email;
-
-  @CreationTimestamp
-  @Column(nullable = false)
-  private LocalDateTime createdAt;
 
   @OneToMany(mappedBy = "doctor")
   private List<Appointment> Appointments;

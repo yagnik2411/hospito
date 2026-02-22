@@ -3,6 +3,7 @@ package com.yagnik.hospito.entity;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.yagnik.hospito.common.entity.AuditableEntity;
 import com.yagnik.hospito.entity.types.BloodGroupType;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -36,7 +37,7 @@ import lombok.ToString;
                 @Index(name = "idx_patient_birth_date", columnList = "dateOfBirth"),
 })
 
-public class Patient {
+public class Patient extends AuditableEntity {
 
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -58,8 +59,6 @@ public class Patient {
         @Column(length = 50)
         private String email;
 
-        @CreationTimestamp
-        private LocalDate createdAt;
 
         @OneToOne(cascade = { CascadeType.MERGE, CascadeType.PERSIST })
         @JoinColumn(name = "patient_insurace_id")
