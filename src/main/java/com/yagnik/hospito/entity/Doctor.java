@@ -24,27 +24,25 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-
-
 @Entity
 @Getter
-  @Setter
-  @Builder
-  @NoArgsConstructor
-  @AllArgsConstructor
-public class Doctor{
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class Doctor {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long Id;
 
-  @Column(nullable = false,length = 100)
+  @Column(nullable = false, length = 100)
   private String name;
 
   @Column(length = 30)
-  private String specilazation;
+  private String specialization;
 
-  @Column(length = 10,nullable = false,unique = true)
+  @Column(length = 10, nullable = false, unique = true)
   private String email;
 
   @CreationTimestamp
@@ -52,11 +50,11 @@ public class Doctor{
   private LocalDateTime createdAt;
 
   @OneToMany(mappedBy = "doctor")
-  private List<Appoinment> appoinments;
+  private List<Appointment> Appointments;
 
   @OneToOne(mappedBy = "headDoctor")
   private Department department;
 
   @ManyToMany(mappedBy = "doctors")
-  private Set<Department> deparments = new HashSet<>();
+  private Set<Department> departments = new HashSet<>();
 }

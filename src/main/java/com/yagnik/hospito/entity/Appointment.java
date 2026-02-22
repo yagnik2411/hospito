@@ -24,14 +24,14 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-  @Builder
-public class Appoinment {
+@Builder
+public class Appointment {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
   @Column(unique = true, nullable = false)
-  private LocalDateTime appoinmentTime;
+  private LocalDateTime AppointmentTime;
 
   @Column(length = 500)
   private String reason;
@@ -42,7 +42,7 @@ public class Appoinment {
   @ManyToOne
   @JoinColumn(name = "patient_id", nullable = false)
   private Patient patient;
-  
+
   @ManyToOne
   @JoinColumn(name = "doctor_id", nullable = false)
   private Doctor doctor;

@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import com.yagnik.hospito.dto.BloodGroupCountResponseEntity;
-import com.yagnik.hospito.entity.Appoinment;
+import com.yagnik.hospito.entity.Appointment;
 import com.yagnik.hospito.entity.Department;
 import com.yagnik.hospito.entity.Insurance;
 

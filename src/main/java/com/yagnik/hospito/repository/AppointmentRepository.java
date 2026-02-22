@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import com.yagnik.hospito.dto.BloodGroupCountResponseEntity;
-import com.yagnik.hospito.entity.Appoinment;
+import com.yagnik.hospito.entity.Appointment;
 import com.yagnik.hospito.entity.Patient;
 
 import org.springframework.data.domain.Page;
@@ -18,6 +18,6 @@ import org.springframework.stereotype.Repository;
 import jakarta.transaction.Transactional;
 
 @Repository
-public interface AppoinmentRepository extends JpaRepository<Appoinment, Long> {
+public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
 
 }

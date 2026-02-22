@@ -61,12 +61,11 @@ public class Patient {
         @CreationTimestamp
         private LocalDate createdAt;
 
-        @OneToOne(cascade = {CascadeType.MERGE,CascadeType.PERSIST})
-        @JoinColumn(name="patient_insurace_id")
+        @OneToOne(cascade = { CascadeType.MERGE, CascadeType.PERSIST })
+        @JoinColumn(name = "patient_insurace_id")
         private Insurance insurance;
 
+        @OneToMany(mappedBy = "patient", cascade = { CascadeType.REMOVE }, orphanRemoval = true)
 
-        @OneToMany(mappedBy="patient",cascade = {CascadeType.REMOVE},orphanRemoval = true)
-        
-        private List<Appoinment> appoinments;
+        private List<Appointment> Appointments;
 }

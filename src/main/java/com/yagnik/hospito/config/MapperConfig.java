@@ -1,4 +1,4 @@
-package com.yagnik.hospito.confing;
+package com.yagnik.hospito.config;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.context.annotation.Bean;
