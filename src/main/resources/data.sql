@@ -1,6 +1,7 @@
-INSERT INTO doctor(name, specialization, email, createdAt) VALUES
-('Dr. Aanya Sharma', 'Cardiologist', 'aanya.sharma@hospital.com', CURRENT_TIMESTAMP),
-('Dr. Vikram Singh', 'Neurologist', 'vikram.singh.neuro@clinic.net', CURRENT_TIMESTAMP),
-('Dr. Priya Patel', 'Dermatologist', 'priya.patel.derma@skincenter.org', CURRENT_TIMESTAMP),
-('Dr. Rohan Mehta', 'Orthopedic Surgeon', 'rohan.mehta@orthocare.in', CURRENT_TIMESTAMP),
-('Dr. Sneha Desai', 'Pediatrician', 'sneha.desai.peds@childhealth.com', CURRENT_TIMESTAMP);
+INSERT INTO roles (name, created_at, updated_at, created_by, updated_by)
+VALUES 
+('SUPER_ADMIN', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'system', 'system'),
+('BRANCH_ADMIN', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'system', 'system'),
+('DOCTOR', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'system', 'system'),
+('PATIENT', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'system', 'system')
+ON CONFLICT (name) DO NOTHING;
