@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hospito-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hospito
+  template:
+    metadata:
+      labels:
+        app: hospito
+    spec:
+      containers:
+      - name: hospito-container
+        image: yagnik2411/hospito:0.0.1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: hospito-config
+        - secretRef:
+            name: hospito-secret
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /hello
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /hello
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 5

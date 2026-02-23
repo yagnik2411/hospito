@@ -31,3 +31,6 @@ build/
 
 ### VS Code ###
 .vscode/
+k8s/secret.yaml
+k8s/hospito-secret.yaml
+k8s/postgres-secret.yaml
