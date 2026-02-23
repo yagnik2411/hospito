@@ -1,6 +1,8 @@
 package com.yagnik.hospito.config;
 
 import org.springframework.data.domain.AuditorAware;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -10,8 +12,16 @@ public class AuditorAwareImpl implements AuditorAware<String> {
 
     @Override
     public Optional<String> getCurrentAuditor() {
-        // For now returns "system" — in Phase 1 (JWT Auth)
-        // this will pull the username from SecurityContext
-        return Optional.of("system");
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        if (authentication == null ||
+            !authentication.isAuthenticated() ||
+            authentication.getPrincipal().equals("anonymousUser")) {
+            return Optional.of("system");
+        }
+
+        return Optional.of(authentication.getName());
     }
 }
