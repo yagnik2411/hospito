@@ -33,6 +33,32 @@ curl -s -X POST http://localhost:8080/api/v1/chain \
     "description": "Leading franchise hospital chain"
   }' | python3 -m json.tool
 
+echo "🏢 Creating Surat branch..."
+curl -s -X POST http://localhost:8080/api/v1/branches \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "name": "Hospito Surat",
+    "address": "123 Ring Road, Surat",
+    "city": "Surat",
+    "state": "Gujarat",
+    "contactPhone": "+91-9876543210",
+    "email": "surat@hospito.com"
+  }' | python3 -m json.tool
+
+echo "🏢 Creating Mumbai branch..."
+curl -s -X POST http://localhost:8080/api/v1/branches \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "name": "Hospito Mumbai",
+    "address": "456 Marine Drive, Mumbai",
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "contactPhone": "+91-9876543211",
+    "email": "mumbai@hospito.com"
+  }' | python3 -m json.tool
+
 echo "✅ Setup complete! Token: $TOKEN"
 echo ""
 echo "Run this to save token for testing:"
