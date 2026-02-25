@@ -1,6 +1,6 @@
-package com.yagnik.hospito.dto;
+package com.yagnik.hospito.patient.dto;
 
-import com.yagnik.hospito.entity.types.BloodGroupType;
+import com.yagnik.hospito.patient.enums.BloodGroupType;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

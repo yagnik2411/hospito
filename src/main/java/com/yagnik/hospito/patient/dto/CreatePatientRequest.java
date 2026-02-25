@@ -1,6 +1,5 @@
 package com.yagnik.hospito.patient.dto;
 
-import com.yagnik.hospito.entity.types.BloodGroupType;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -8,6 +7,8 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.time.LocalDate;
+
+import com.yagnik.hospito.patient.enums.BloodGroupType;
 
 @Data
 public class CreatePatientRequest {

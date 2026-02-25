@@ -1,4 +1,4 @@
-package com.yagnik.hospito.entity.types;
+package com.yagnik.hospito.patient.enums;
 
 public enum BloodGroupType {
     A_POSITIVE,

@@ -3,7 +3,8 @@ package com.yagnik.hospito.patient.entity;
 import com.yagnik.hospito.auth.entity.User;
 import com.yagnik.hospito.branch.entity.Branch;
 import com.yagnik.hospito.common.entity.AuditableEntity;
-import com.yagnik.hospito.entity.types.BloodGroupType;
+import com.yagnik.hospito.patient.enums.BloodGroupType;
+
 import jakarta.persistence.*;
 import lombok.*;
 
