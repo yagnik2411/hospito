@@ -4,6 +4,8 @@ import com.yagnik.hospito.branch.dto.BranchResponse;
 import com.yagnik.hospito.branch.dto.CreateBranchRequest;
 import com.yagnik.hospito.branch.service.BranchService;
 import com.yagnik.hospito.common.response.ApiResponse;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,6 +18,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/branches")
 @RequiredArgsConstructor
+@Tag(name = "Branch", description = "Branch management")
 public class BranchController {
 
     private final BranchService branchService;

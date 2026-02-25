@@ -4,6 +4,9 @@ import com.yagnik.hospito.billing.dto.*;
 import com.yagnik.hospito.billing.enums.BillStatus;
 import com.yagnik.hospito.billing.service.BillingService;
 import com.yagnik.hospito.common.response.ApiResponse;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,10 +19,12 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/bills")
 @RequiredArgsConstructor
+@Tag(name = "Billing", description = "Bill creation and payment processing")
 public class BillingController {
 
     private final BillingService billingService;
 
+    @Operation(summary = "Create a bill for a completed appointment")
     @PostMapping
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'BRANCH_ADMIN')")
     public ResponseEntity<ApiResponse<BillResponse>> createBill(
@@ -27,8 +32,8 @@ public class BillingController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(ApiResponse.success(
-                    billingService.createBill(request),
-                    "Bill created successfully"));
+                        billingService.createBill(request),
+                        "Bill created successfully"));
     }
 
     @GetMapping("/{id}")
@@ -45,7 +50,7 @@ public class BillingController {
             @PathVariable Long appointmentId) {
         return ResponseEntity.ok(
                 ApiResponse.success(
-                    billingService.getBillByAppointment(appointmentId)));
+                        billingService.getBillByAppointment(appointmentId)));
     }
 
     @GetMapping("/patient/{patientId}")
@@ -54,7 +59,7 @@ public class BillingController {
             @PathVariable Long patientId) {
         return ResponseEntity.ok(
                 ApiResponse.success(
-                    billingService.getBillsByPatient(patientId)));
+                        billingService.getBillsByPatient(patientId)));
     }
 
     @GetMapping("/branch/{branchId}")
@@ -64,9 +69,10 @@ public class BillingController {
             @RequestParam(required = false) BillStatus status) {
         return ResponseEntity.ok(
                 ApiResponse.success(
-                    billingService.getBillsByBranch(branchId, status)));
+                        billingService.getBillsByBranch(branchId, status)));
     }
 
+    @Operation(summary = "Process payment", description = "Supports CASH, CARD (1.5% fee), UPI (@ required), INSURANCE (80% coverage)")
     @PostMapping("/{id}/pay")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'BRANCH_ADMIN')")
     public ResponseEntity<ApiResponse<BillResponse>> processPayment(
@@ -74,10 +80,11 @@ public class BillingController {
             @Valid @RequestBody ProcessPaymentRequest request) {
         return ResponseEntity.ok(
                 ApiResponse.success(
-                    billingService.processPayment(id, request),
-                    "Payment processed successfully"));
+                        billingService.processPayment(id, request),
+                        "Payment processed successfully"));
     }
 
+    @Operation(summary = "Waive a bill (SUPER_ADMIN only)")
     @PatchMapping("/{id}/waive")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<BillResponse>> waiveBill(
@@ -85,7 +92,7 @@ public class BillingController {
             @RequestParam(required = false) String notes) {
         return ResponseEntity.ok(
                 ApiResponse.success(
-                    billingService.waiveBill(id, notes),
-                    "Bill waived successfully"));
+                        billingService.waiveBill(id, notes),
+                        "Bill waived successfully"));
     }
 }

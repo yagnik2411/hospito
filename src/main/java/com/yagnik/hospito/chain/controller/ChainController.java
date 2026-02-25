@@ -4,6 +4,8 @@ import com.yagnik.hospito.chain.dto.ChainResponse;
 import com.yagnik.hospito.chain.dto.CreateChainRequest;
 import com.yagnik.hospito.chain.service.ChainService;
 import com.yagnik.hospito.common.response.ApiResponse;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/chain")
 @RequiredArgsConstructor
+@Tag(name = "Chain", description = "Hospital chain management")
 public class ChainController {
 
     private final ChainService chainService;

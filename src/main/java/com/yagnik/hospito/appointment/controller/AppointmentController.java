@@ -4,6 +4,9 @@ import com.yagnik.hospito.appointment.dto.*;
 import com.yagnik.hospito.appointment.enums.AppointmentStatus;
 import com.yagnik.hospito.appointment.service.AppointmentService;
 import com.yagnik.hospito.common.response.ApiResponse;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,10 +19,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/appointments")
 @RequiredArgsConstructor
+@Tag(name = "Appointment", description = "Appointment booking and status management")
 public class AppointmentController {
 
     private final AppointmentService appointmentService;
 
+    @Operation(summary = "Book a new appointment",
+           description = "Prevents double booking — same doctor cannot have two appointments at the same time")
     @PostMapping
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'BRANCH_ADMIN', 'PATIENT')")
     public ResponseEntity<ApiResponse<AppointmentResponse>> createAppointment(
@@ -67,7 +73,8 @@ public class AppointmentController {
                 ApiResponse.success(
                     appointmentService.getAppointmentsByPatient(patientId)));
     }
-
+    @Operation(summary = "Update appointment status",
+           description = "Valid transitions: PENDING→CONFIRMED, CONFIRMED→IN_PROGRESS, IN_PROGRESS→COMPLETED")
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'BRANCH_ADMIN', 'DOCTOR')")
     public ResponseEntity<ApiResponse<AppointmentResponse>> updateStatus(

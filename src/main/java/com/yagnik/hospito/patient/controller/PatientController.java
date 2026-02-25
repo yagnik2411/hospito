@@ -3,6 +3,8 @@ package com.yagnik.hospito.patient.controller;
 import com.yagnik.hospito.common.response.ApiResponse;
 import com.yagnik.hospito.patient.dto.*;
 import com.yagnik.hospito.patient.service.PatientService;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,6 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/patients")
 @RequiredArgsConstructor
+@Tag(name = "Patient", description = "Patient registration, medical records, insurance")
 public class PatientController {
 
     private final PatientService patientService;
