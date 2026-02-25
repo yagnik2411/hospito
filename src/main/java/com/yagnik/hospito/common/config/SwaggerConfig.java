@@ -20,17 +20,43 @@ public class SwaggerConfig {
                 .info(new Info()
                         .title("Hospito API")
                         .description("""
-                                Hospital Franchise Management System
+                                Hospito is an enterprise-grade hospital franchise management platform \
+                                designed to streamline operations across multiple branches under a single \
+                                hospital chain.
 
-                                A multi-branch hospital management platform supporting:
-                                - JWT Authentication with role-based access control
-                                - Chain and Branch management
-                                - Doctor scheduling and transfers
-                                - Patient registration and medical records
-                                - Appointment booking with conflict detection
-                                - Billing with Cash, Card, UPI, and Insurance payment strategies
+                                The platform supports the complete patient journey — from registration \
+                                and appointment booking to consultation, medical records, and billing — \
+                                all within a unified, multi-branch ecosystem.
 
-                                Roles: SUPER_ADMIN, BRANCH_ADMIN, DOCTOR, PATIENT
+                                Core Capabilities:
+
+                                • Multi-Branch Operations
+                                  Manage an unlimited number of hospital branches under one chain. \
+                                  Doctors can be assigned to and transferred across branches. \
+                                  Patient records are shared across the entire chain.
+
+                                • Appointment Management
+                                  Patients book appointments with doctors at specific branches. \
+                                  The system enforces conflict detection to prevent double-booking \
+                                  and tracks appointment lifecycle from PENDING through COMPLETED.
+
+                                • Medical Records
+                                  Doctors record diagnoses, prescriptions, and clinical notes \
+                                  against each patient visit. Full history is available across branches.
+
+                                • Billing and Payments
+                                  Bills are generated against completed appointments with line-item \
+                                  breakdown of services. Payments are accepted via Cash, Card, UPI, \
+                                  and Insurance with automatic coverage calculation.
+
+                                • Access Control
+                                  Every endpoint is protected by role-based access control. \
+                                  Four roles are supported: SUPER_ADMIN, BRANCH_ADMIN, DOCTOR, and PATIENT. \
+                                  Each role has a precisely defined set of permitted operations.
+
+                                Authentication:
+                                  Click the Authorize button, obtain a token from POST /api/v1/auth/login, \
+                                  and paste it to authenticate all requests in this UI.
                                 """)
                         .version("v1.0.0")
                         .contact(new Contact()
