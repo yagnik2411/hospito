@@ -17,6 +17,9 @@ import com.yagnik.hospito.doctor.repository.DoctorRepository;
 import com.yagnik.hospito.doctor.service.DoctorService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -27,219 +30,225 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DoctorServiceImpl implements DoctorService {
 
-    private final DoctorRepository doctorRepository;
-    private final DoctorAvailabilityRepository availabilityRepository;
-    private final BranchRepository branchRepository;
-    private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
-    private final PasswordEncoder passwordEncoder;
+        private final DoctorRepository doctorRepository;
+        private final DoctorAvailabilityRepository availabilityRepository;
+        private final BranchRepository branchRepository;
+        private final UserRepository userRepository;
+        private final RoleRepository roleRepository;
+        private final PasswordEncoder passwordEncoder;
 
-    @Override
-    @Transactional
-    public DoctorResponse createDoctor(CreateDoctorRequest request) {
+        @Override
+        @Transactional
+        public DoctorResponse createDoctor(CreateDoctorRequest request) {
 
-        // Step 1 — Branch must exist and be active
-        Branch branch = branchRepository.findById(request.getBranchId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Branch", request.getBranchId()));
+                // Step 1 — Branch must exist and be active
+                Branch branch = branchRepository.findById(request.getBranchId())
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Branch", request.getBranchId()));
 
-        if (!branch.isActive()) {
-            throw new BusinessRuleException(
-                    "Cannot assign doctor to an inactive branch.");
+                if (!branch.isActive()) {
+                        throw new BusinessRuleException(
+                                        "Cannot assign doctor to an inactive branch.");
+                }
+
+                // Step 2 — Email must not already exist
+                if (userRepository.existsByEmail(request.getEmail())) {
+                        throw new BusinessRuleException(
+                                        "Email already registered: " + request.getEmail());
+                }
+
+                // Step 3 — License number must be unique
+                if (doctorRepository.existsByLicenseNumber(request.getLicenseNumber())) {
+                        throw new BusinessRuleException(
+                                        "License number already registered: " + request.getLicenseNumber());
+                }
+
+                // Step 4 — Find DOCTOR role
+                Role doctorRole = roleRepository.findByName(RoleType.DOCTOR)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "DOCTOR role not found. Make sure roles are seeded."));
+
+                // Step 5 — Create User account for doctor
+                User user = User.builder()
+                                .name(request.getName())
+                                .email(request.getEmail())
+                                .password(passwordEncoder.encode(request.getPassword()))
+                                .role(doctorRole)
+                                .isActive(true)
+                                .build();
+                userRepository.save(user);
+
+                // Step 6 — Create Doctor entity
+                Doctor doctor = Doctor.builder()
+                                .name(request.getName())
+                                .specialization(request.getSpecialization())
+                                .licenseNumber(request.getLicenseNumber())
+                                .bio(request.getBio())
+                                .primaryBranch(branch)
+                                .user(user)
+                                .build();
+
+                // Step 7 — Add to branch's ManyToMany
+                doctor.getBranches().add(branch);
+
+                return mapToResponse(doctorRepository.save(doctor));
         }
 
-        // Step 2 — Email must not already exist
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new BusinessRuleException(
-                    "Email already registered: " + request.getEmail());
+        @Cacheable(value = "doctors", key = "#id")
+        @Override
+        public DoctorResponse getDoctorById(Long id) {
+                return mapToResponse(findDoctorById(id));
         }
 
-        // Step 3 — License number must be unique
-        if (doctorRepository.existsByLicenseNumber(request.getLicenseNumber())) {
-            throw new BusinessRuleException(
-                    "License number already registered: " + request.getLicenseNumber());
+        @Cacheable(value = "doctors", key = "'branch_' + #branchId")
+
+        @Override
+        public List<DoctorResponse> getDoctorsByBranch(Long branchId, String specialization) {
+                // Verify branch exists
+                branchRepository.findById(branchId)
+                                .orElseThrow(() -> new ResourceNotFoundException("Branch", branchId));
+
+                List<Doctor> doctors;
+                if (specialization != null && !specialization.isBlank()) {
+                        doctors = doctorRepository.findByBranchIdAndSpecialization(
+                                        branchId, specialization);
+                } else {
+                        doctors = doctorRepository.findActiveByBranchId(branchId);
+                }
+
+                return doctors.stream()
+                                .map(this::mapToResponse)
+                                .toList();
         }
 
-        // Step 4 — Find DOCTOR role
-        Role doctorRole = roleRepository.findByName(RoleType.DOCTOR)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "DOCTOR role not found. Make sure roles are seeded."));
+        @CacheEvict(value = "doctors", key = "#id")
+        @Override
+        @Transactional
+        public DoctorResponse updateDoctor(Long id, CreateDoctorRequest request) {
+                Doctor doctor = findDoctorById(id);
 
-        // Step 5 — Create User account for doctor
-        User user = User.builder()
-                .name(request.getName())
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .role(doctorRole)
-                .isActive(true)
-                .build();
-        userRepository.save(user);
+                // Update only non-auth fields
+                doctor.setName(request.getName());
+                doctor.setSpecialization(request.getSpecialization());
+                doctor.setBio(request.getBio());
 
-        // Step 6 — Create Doctor entity
-        Doctor doctor = Doctor.builder()
-                .name(request.getName())
-                .specialization(request.getSpecialization())
-                .licenseNumber(request.getLicenseNumber())
-                .bio(request.getBio())
-                .primaryBranch(branch)
-                .user(user)
-                .build();
+                // Update user name as well
+                doctor.getUser().setName(request.getName());
+                userRepository.save(doctor.getUser());
 
-        // Step 7 — Add to branch's ManyToMany
-        doctor.getBranches().add(branch);
-
-        return mapToResponse(doctorRepository.save(doctor));
-    }
-
-    @Override
-    public DoctorResponse getDoctorById(Long id) {
-        return mapToResponse(findDoctorById(id));
-    }
-
-    @Override
-    public List<DoctorResponse> getDoctorsByBranch(Long branchId, String specialization) {
-        // Verify branch exists
-        branchRepository.findById(branchId)
-                .orElseThrow(() -> new ResourceNotFoundException("Branch", branchId));
-
-        List<Doctor> doctors;
-        if (specialization != null && !specialization.isBlank()) {
-            doctors = doctorRepository.findByBranchIdAndSpecialization(
-                    branchId, specialization);
-        } else {
-            doctors = doctorRepository.findActiveByBranchId(branchId);
+                return mapToResponse(doctorRepository.save(doctor));
         }
 
-        return doctors.stream()
-                .map(this::mapToResponse)
-                .toList();
-    }
+        @CacheEvict(value = "doctors", allEntries = true)
+        @Override
+        @Transactional
+        public DoctorResponse transferDoctor(Long id, TransferDoctorRequest request) {
+                Doctor doctor = findDoctorById(id);
 
-    @Override
-    @Transactional
-    public DoctorResponse updateDoctor(Long id, CreateDoctorRequest request) {
-        Doctor doctor = findDoctorById(id);
+                Branch targetBranch = branchRepository.findById(request.getTargetBranchId())
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Branch", request.getTargetBranchId()));
 
-        // Update only non-auth fields
-        doctor.setName(request.getName());
-        doctor.setSpecialization(request.getSpecialization());
-        doctor.setBio(request.getBio());
+                if (!targetBranch.isActive()) {
+                        throw new BusinessRuleException(
+                                        "Cannot transfer doctor to an inactive branch.");
+                }
 
-        // Update user name as well
-        doctor.getUser().setName(request.getName());
-        userRepository.save(doctor.getUser());
+                // Check if already in target branch
+                boolean alreadyInBranch = doctor.getBranches().stream()
+                                .anyMatch(b -> b.getId().equals(request.getTargetBranchId()));
 
-        return mapToResponse(doctorRepository.save(doctor));
-    }
+                if (alreadyInBranch) {
+                        throw new BusinessRuleException(
+                                        "Doctor is already assigned to this branch.");
+                }
 
-    @Override
-    @Transactional
-    public DoctorResponse transferDoctor(Long id, TransferDoctorRequest request) {
-        Doctor doctor = findDoctorById(id);
+                // Add to new branch + update primary branch
+                doctor.getBranches().add(targetBranch);
+                doctor.setPrimaryBranch(targetBranch);
 
-        Branch targetBranch = branchRepository.findById(request.getTargetBranchId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Branch", request.getTargetBranchId()));
-
-        if (!targetBranch.isActive()) {
-            throw new BusinessRuleException(
-                    "Cannot transfer doctor to an inactive branch.");
+                return mapToResponse(doctorRepository.save(doctor));
         }
 
-        // Check if already in target branch
-        boolean alreadyInBranch = doctor.getBranches().stream()
-                .anyMatch(b -> b.getId().equals(request.getTargetBranchId()));
-
-        if (alreadyInBranch) {
-            throw new BusinessRuleException(
-                    "Doctor is already assigned to this branch.");
+        @CacheEvict(value = "doctors", key = "#id")
+        @Override
+        @Transactional
+        public void deleteDoctor(Long id) {
+                Doctor doctor = findDoctorById(id);
+                doctor.setActive(false);
+                doctor.getUser().setActive(false);
+                userRepository.save(doctor.getUser());
+                doctorRepository.save(doctor);
         }
 
-        // Add to new branch + update primary branch
-        doctor.getBranches().add(targetBranch);
-        doctor.setPrimaryBranch(targetBranch);
+        @Override
+        @Transactional
+        public List<DoctorAvailabilityResponse> setAvailability(
+                        Long id, List<DoctorAvailabilityRequest> requests) {
 
-        return mapToResponse(doctorRepository.save(doctor));
-    }
+                Doctor doctor = findDoctorById(id);
 
-    @Override
-    @Transactional
-    public void deleteDoctor(Long id) {
-        Doctor doctor = findDoctorById(id);
-        doctor.setActive(false);
-        doctor.getUser().setActive(false);
-        userRepository.save(doctor.getUser());
-        doctorRepository.save(doctor);
-    }
+                // Full replace strategy — delete all existing slots first
+                availabilityRepository.deleteByDoctorId(id);
 
-    @Override
-    @Transactional
-    public List<DoctorAvailabilityResponse> setAvailability(
-            Long id, List<DoctorAvailabilityRequest> requests) {
+                // Save new slots
+                List<DoctorAvailability> slots = requests.stream()
+                                .map(req -> DoctorAvailability.builder()
+                                                .dayOfWeek(req.getDayOfWeek())
+                                                .startTime(req.getStartTime())
+                                                .endTime(req.getEndTime())
+                                                .slotDurationMinutes(req.getSlotDurationMinutes())
+                                                .doctor(doctor)
+                                                .build())
+                                .collect(Collectors.toList());
 
-        Doctor doctor = findDoctorById(id);
+                return availabilityRepository.saveAll(slots).stream()
+                                .map(this::mapAvailabilityToResponse)
+                                .toList();
+        }
 
-        // Full replace strategy — delete all existing slots first
-        availabilityRepository.deleteByDoctorId(id);
+        @Override
+        public List<DoctorAvailabilityResponse> getAvailability(Long id) {
+                findDoctorById(id); // validates doctor exists
+                return availabilityRepository.findByDoctorId(id).stream()
+                                .map(this::mapAvailabilityToResponse)
+                                .toList();
+        }
 
-        // Save new slots
-        List<DoctorAvailability> slots = requests.stream()
-                .map(req -> DoctorAvailability.builder()
-                        .dayOfWeek(req.getDayOfWeek())
-                        .startTime(req.getStartTime())
-                        .endTime(req.getEndTime())
-                        .slotDurationMinutes(req.getSlotDurationMinutes())
-                        .doctor(doctor)
-                        .build())
-                .collect(Collectors.toList());
+        // ── Private helpers ──────────────────────────────────────────────────
 
-        return availabilityRepository.saveAll(slots).stream()
-                .map(this::mapAvailabilityToResponse)
-                .toList();
-    }
+        private Doctor findDoctorById(Long id) {
+                return doctorRepository.findById(id)
+                                .orElseThrow(() -> new ResourceNotFoundException("Doctor", id));
+        }
 
-    @Override
-    public List<DoctorAvailabilityResponse> getAvailability(Long id) {
-        findDoctorById(id); // validates doctor exists
-        return availabilityRepository.findByDoctorId(id).stream()
-                .map(this::mapAvailabilityToResponse)
-                .toList();
-    }
+        private DoctorResponse mapToResponse(Doctor doctor) {
+                return DoctorResponse.builder()
+                                .id(doctor.getId())
+                                .name(doctor.getName())
+                                .specialization(doctor.getSpecialization())
+                                .licenseNumber(doctor.getLicenseNumber())
+                                .bio(doctor.getBio())
+                                .isActive(doctor.isActive())
+                                .email(doctor.getUser().getEmail())
+                                .primaryBranchId(doctor.getPrimaryBranch().getId())
+                                .primaryBranchName(doctor.getPrimaryBranch().getName())
+                                .branchNames(doctor.getBranches().stream()
+                                                .map(Branch::getName)
+                                                .collect(Collectors.toSet()))
+                                .createdAt(doctor.getCreatedAt())
+                                .build();
+        }
 
-    // ── Private helpers ──────────────────────────────────────────────────
-
-    private Doctor findDoctorById(Long id) {
-        return doctorRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor", id));
-    }
-
-    private DoctorResponse mapToResponse(Doctor doctor) {
-        return DoctorResponse.builder()
-                .id(doctor.getId())
-                .name(doctor.getName())
-                .specialization(doctor.getSpecialization())
-                .licenseNumber(doctor.getLicenseNumber())
-                .bio(doctor.getBio())
-                .isActive(doctor.isActive())
-                .email(doctor.getUser().getEmail())
-                .primaryBranchId(doctor.getPrimaryBranch().getId())
-                .primaryBranchName(doctor.getPrimaryBranch().getName())
-                .branchNames(doctor.getBranches().stream()
-                        .map(Branch::getName)
-                        .collect(Collectors.toSet()))
-                .createdAt(doctor.getCreatedAt())
-                .build();
-    }
-
-    private DoctorAvailabilityResponse mapAvailabilityToResponse(DoctorAvailability slot) {
-        return DoctorAvailabilityResponse.builder()
-                .id(slot.getId())
-                .dayOfWeek(slot.getDayOfWeek())
-                .startTime(slot.getStartTime())
-                .endTime(slot.getEndTime())
-                .slotDurationMinutes(slot.getSlotDurationMinutes())
-                .doctorId(slot.getDoctor().getId())
-                .doctorName(slot.getDoctor().getName())
-                .build();
-    }
+        private DoctorAvailabilityResponse mapAvailabilityToResponse(DoctorAvailability slot) {
+                return DoctorAvailabilityResponse.builder()
+                                .id(slot.getId())
+                                .dayOfWeek(slot.getDayOfWeek())
+                                .startTime(slot.getStartTime())
+                                .endTime(slot.getEndTime())
+                                .slotDurationMinutes(slot.getSlotDurationMinutes())
+                                .doctorId(slot.getDoctor().getId())
+                                .doctorName(slot.getDoctor().getName())
+                                .build();
+        }
 }

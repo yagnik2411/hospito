@@ -10,6 +10,9 @@ import com.yagnik.hospito.chain.repository.ChainRepository;
 import com.yagnik.hospito.common.exception.BusinessRuleException;
 import com.yagnik.hospito.common.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,13 +29,13 @@ public class BranchServiceImpl implements BranchService {
         // Chain must exist before creating a branch
         HospitalChain chain = chainRepository.findFirstByOrderByIdAsc()
                 .orElseThrow(() -> new ResourceNotFoundException(
-                    "No hospital chain found. Create a chain first."));
+                        "No hospital chain found. Create a chain first."));
 
         // Check duplicate email within same chain
         if (request.getEmail() != null &&
-            branchRepository.existsByEmailAndChainId(request.getEmail(), chain.getId())) {
+                branchRepository.existsByEmailAndChainId(request.getEmail(), chain.getId())) {
             throw new BusinessRuleException(
-                "A branch with this email already exists in the chain.");
+                    "A branch with this email already exists in the chain.");
         }
 
         Branch branch = Branch.builder()
@@ -48,6 +51,7 @@ public class BranchServiceImpl implements BranchService {
         return mapToResponse(branchRepository.save(branch));
     }
 
+    @Cacheable(value = "branches", key = "#id")
     @Override
     public BranchResponse getBranchById(Long id) {
         Branch branch = branchRepository.findById(id)
@@ -59,13 +63,14 @@ public class BranchServiceImpl implements BranchService {
     public List<BranchResponse> getAllBranches() {
         HospitalChain chain = chainRepository.findFirstByOrderByIdAsc()
                 .orElseThrow(() -> new ResourceNotFoundException(
-                    "No hospital chain found."));
+                        "No hospital chain found."));
         return branchRepository.findAllByChainId(chain.getId())
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
     }
 
+    @CacheEvict(value = "branches", key = "#id")
     @Override
     public BranchResponse updateBranch(Long id, CreateBranchRequest request) {
         Branch branch = branchRepository.findById(id)
@@ -81,6 +86,7 @@ public class BranchServiceImpl implements BranchService {
         return mapToResponse(branchRepository.save(branch));
     }
 
+    @CacheEvict(value = "branches", key = "#id")
     @Override
     public void deleteBranch(Long id) {
         Branch branch = branchRepository.findById(id)
