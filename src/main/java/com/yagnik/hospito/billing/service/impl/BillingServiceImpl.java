@@ -7,12 +7,14 @@ import com.yagnik.hospito.billing.dto.*;
 import com.yagnik.hospito.billing.entity.Bill;
 import com.yagnik.hospito.billing.entity.BillItem;
 import com.yagnik.hospito.billing.enums.BillStatus;
+import com.yagnik.hospito.billing.producer.BillingEventProducer;
 import com.yagnik.hospito.billing.repository.BillRepository;
 import com.yagnik.hospito.billing.service.BillingService;
 import com.yagnik.hospito.billing.strategy.PaymentRequest;
 import com.yagnik.hospito.billing.strategy.PaymentResult;
 import com.yagnik.hospito.billing.strategy.PaymentStrategy;
 import com.yagnik.hospito.billing.strategy.factory.PaymentStrategyFactory;
+import com.yagnik.hospito.common.event.HospitoEvent;
 import com.yagnik.hospito.common.exception.BusinessRuleException;
 import com.yagnik.hospito.common.exception.ResourceNotFoundException;
 import jakarta.transaction.Transactional;
@@ -30,6 +32,7 @@ public class BillingServiceImpl implements BillingService {
     private final BillRepository billRepository;
     private final AppointmentRepository appointmentRepository;
     private final PaymentStrategyFactory strategyFactory;
+    private final BillingEventProducer billingEventProducer;
 
     @Override
     @Transactional
@@ -39,20 +42,20 @@ public class BillingServiceImpl implements BillingService {
         Appointment appointment = appointmentRepository
                 .findById(request.getAppointmentId())
                 .orElseThrow(() -> new ResourceNotFoundException(
-                    "Appointment", request.getAppointmentId()));
+                        "Appointment", request.getAppointmentId()));
 
         // Appointment must be COMPLETED to bill
         if (appointment.getStatus() != AppointmentStatus.COMPLETED) {
             throw new BusinessRuleException(
-                "Can only create bill for COMPLETED appointments. " +
-                "Current status: " + appointment.getStatus());
+                    "Can only create bill for COMPLETED appointments. " +
+                            "Current status: " + appointment.getStatus());
         }
 
         // Prevent duplicate billing
         if (billRepository.existsByAppointmentId(request.getAppointmentId())) {
             throw new BusinessRuleException(
-                "Bill already exists for appointment id: "
-                + request.getAppointmentId());
+                    "Bill already exists for appointment id: "
+                            + request.getAppointmentId());
         }
 
         // Build items and compute totals
@@ -75,11 +78,12 @@ public class BillingServiceImpl implements BillingService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal discount = request.getDiscountAmount() != null
-                ? request.getDiscountAmount() : BigDecimal.ZERO;
+                ? request.getDiscountAmount()
+                : BigDecimal.ZERO;
 
         BigDecimal taxAmount = BigDecimal.ZERO;
         if (request.getTaxPercent() != null &&
-            request.getTaxPercent().compareTo(BigDecimal.ZERO) > 0) {
+                request.getTaxPercent().compareTo(BigDecimal.ZERO) > 0) {
             taxAmount = totalAmount
                     .subtract(discount)
                     .multiply(request.getTaxPercent())
@@ -120,7 +124,7 @@ public class BillingServiceImpl implements BillingService {
     public BillResponse getBillByAppointment(Long appointmentId) {
         Bill bill = billRepository.findByAppointmentId(appointmentId)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                    "Bill for appointment id " + appointmentId + " not found."));
+                        "Bill for appointment id " + appointmentId + " not found."));
         return mapToResponse(bill, null);
     }
 
@@ -136,7 +140,7 @@ public class BillingServiceImpl implements BillingService {
     public List<BillResponse> getBillsByBranch(Long branchId, BillStatus status) {
         List<Bill> bills = status != null
                 ? billRepository.findAllByBranchIdAndStatusOrderByCreatedAtDesc(
-                    branchId, status)
+                        branchId, status)
                 : billRepository.findAllByBranchIdOrderByCreatedAtDesc(branchId);
 
         return bills.stream().map(b -> mapToResponse(b, null)).toList();
@@ -148,14 +152,14 @@ public class BillingServiceImpl implements BillingService {
         Bill bill = findBillById(billId);
 
         if (bill.getStatus() == BillStatus.PAID ||
-            bill.getStatus() == BillStatus.WAIVED) {
+                bill.getStatus() == BillStatus.WAIVED) {
             throw new BusinessRuleException(
-                "Bill is already " + bill.getStatus() + ". Cannot process payment.");
+                    "Bill is already " + bill.getStatus() + ". Cannot process payment.");
         }
 
         // Get strategy via factory
         PaymentStrategy strategy = strategyFactory.getStrategy(
-            request.getPaymentMethod());
+                request.getPaymentMethod());
 
         PaymentRequest paymentRequest = PaymentRequest.builder()
                 .bill(bill)
@@ -173,7 +177,18 @@ public class BillingServiceImpl implements BillingService {
         bill.setPatientPayableAmount(result.getPatientPaid());
         bill.setTransactionReference(result.getTransactionReference());
 
-        return mapToResponse(billRepository.save(bill), result.getMessage());
+        Bill paid = billRepository.save(bill);
+
+        billingEventProducer.publishBillPaid(HospitoEvent.builder()
+                .billId(paid.getId())
+                .patientName(paid.getPatient().getName())
+                .patientEmail(paid.getPatient().getUser().getEmail())
+                .amountPaid(result.getAmountPaid())
+                .paymentMethod(request.getPaymentMethod().name())
+                .transactionReference(result.getTransactionReference())
+                .build());
+
+        return mapToResponse(paid, result.getMessage());
     }
 
     @Override
@@ -183,7 +198,7 @@ public class BillingServiceImpl implements BillingService {
 
         if (bill.getStatus() == BillStatus.PAID) {
             throw new BusinessRuleException(
-                "Cannot waive a bill that is already PAID.");
+                    "Cannot waive a bill that is already PAID.");
         }
 
         bill.setStatus(BillStatus.WAIVED);

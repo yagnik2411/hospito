@@ -3,10 +3,12 @@ package com.yagnik.hospito.appointment.service.impl;
 import com.yagnik.hospito.appointment.dto.*;
 import com.yagnik.hospito.appointment.entity.Appointment;
 import com.yagnik.hospito.appointment.enums.AppointmentStatus;
+import com.yagnik.hospito.appointment.producer.AppointmentEventProducer;
 import com.yagnik.hospito.appointment.repository.AppointmentRepository;
 import com.yagnik.hospito.appointment.service.AppointmentService;
 import com.yagnik.hospito.branch.entity.Branch;
 import com.yagnik.hospito.branch.repository.BranchRepository;
+import com.yagnik.hospito.common.event.HospitoEvent;
 import com.yagnik.hospito.common.exception.BusinessRuleException;
 import com.yagnik.hospito.common.exception.ResourceNotFoundException;
 import com.yagnik.hospito.doctor.entity.Doctor;
@@ -27,6 +29,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final PatientRepository patientRepository;
     private final DoctorRepository doctorRepository;
     private final BranchRepository branchRepository;
+    private final AppointmentEventProducer appointmentEventProducer;
 
     @Override
     @Transactional
@@ -35,7 +38,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         // Validate patient exists and is active
         Patient patient = patientRepository.findById(request.getPatientId())
                 .orElseThrow(() -> new ResourceNotFoundException(
-                    "Patient", request.getPatientId()));
+                        "Patient", request.getPatientId()));
 
         if (!patient.isActive()) {
             throw new BusinessRuleException("Patient account is inactive.");
@@ -44,7 +47,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         // Validate doctor exists and is active
         Doctor doctor = doctorRepository.findById(request.getDoctorId())
                 .orElseThrow(() -> new ResourceNotFoundException(
-                    "Doctor", request.getDoctorId()));
+                        "Doctor", request.getDoctorId()));
 
         if (!doctor.isActive()) {
             throw new BusinessRuleException("Doctor is not active.");
@@ -53,7 +56,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         // Validate branch exists and is active
         Branch branch = branchRepository.findById(request.getBranchId())
                 .orElseThrow(() -> new ResourceNotFoundException(
-                    "Branch", request.getBranchId()));
+                        "Branch", request.getBranchId()));
 
         if (!branch.isActive()) {
             throw new BusinessRuleException("Branch is not active.");
@@ -65,13 +68,13 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         if (!doctorInBranch) {
             throw new BusinessRuleException(
-                "Doctor is not assigned to this branch.");
+                    "Doctor is not assigned to this branch.");
         }
 
         // Conflict detection — prevent double booking
         List<AppointmentStatus> excludedStatuses = List.of(
-            AppointmentStatus.CANCELLED,
-            AppointmentStatus.NO_SHOW);
+                AppointmentStatus.CANCELLED,
+                AppointmentStatus.NO_SHOW);
 
         boolean hasConflict = appointmentRepository.existsConflict(
                 request.getDoctorId(),
@@ -80,7 +83,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         if (hasConflict) {
             throw new BusinessRuleException(
-                "Doctor already has an appointment at this time. Please choose a different slot.");
+                    "Doctor already has an appointment at this time. Please choose a different slot.");
         }
 
         // Create appointment
@@ -96,8 +99,18 @@ public class AppointmentServiceImpl implements AppointmentService {
         // Add branch to patient's visited branches
         patient.getVisitedBranches().add(branch);
         patientRepository.save(patient);
+        Appointment saved = appointmentRepository.save(appointment);
 
-        return mapToResponse(appointmentRepository.save(appointment));
+        appointmentEventProducer.publishAppointmentBooked(HospitoEvent.builder()
+                .appointmentId(saved.getId())
+                .patientName(patient.getName())
+                .patientEmail(patient.getUser().getEmail())
+                .doctorName(doctor.getName())
+                .branchName(branch.getName())
+                .appointmentTime(saved.getAppointmentTime())
+                .reason(saved.getReason())
+                .build());
+        return mapToResponse(saved);
     }
 
     @Override
@@ -115,10 +128,10 @@ public class AppointmentServiceImpl implements AppointmentService {
         List<Appointment> appointments;
         if (status != null) {
             appointments = appointmentRepository
-                .findAllByBranchIdAndStatusOrderByAppointmentTimeDesc(branchId, status);
+                    .findAllByBranchIdAndStatusOrderByAppointmentTimeDesc(branchId, status);
         } else {
             appointments = appointmentRepository
-                .findAllByBranchIdOrderByAppointmentTimeDesc(branchId);
+                    .findAllByBranchIdOrderByAppointmentTimeDesc(branchId);
         }
 
         return appointments.stream().map(this::mapToResponse).toList();
@@ -134,10 +147,10 @@ public class AppointmentServiceImpl implements AppointmentService {
         List<Appointment> appointments;
         if (status != null) {
             appointments = appointmentRepository
-                .findAllByDoctorIdAndStatusOrderByAppointmentTimeDesc(doctorId, status);
+                    .findAllByDoctorIdAndStatusOrderByAppointmentTimeDesc(doctorId, status);
         } else {
             appointments = appointmentRepository
-                .findAllByDoctorIdOrderByAppointmentTimeDesc(doctorId);
+                    .findAllByDoctorIdOrderByAppointmentTimeDesc(doctorId);
         }
 
         return appointments.stream().map(this::mapToResponse).toList();
@@ -171,7 +184,33 @@ public class AppointmentServiceImpl implements AppointmentService {
             appointment.setNotes(request.getNotes());
         }
 
-        return mapToResponse(appointmentRepository.save(appointment));
+        Appointment updated = appointmentRepository.save(appointment);
+
+        if (request.getStatus() == AppointmentStatus.CONFIRMED) {
+            appointmentEventProducer.publishAppointmentConfirmed(HospitoEvent.builder()
+                    .appointmentId(updated.getId())
+                    .patientName(updated.getPatient().getName())
+                    .patientEmail(updated.getPatient().getUser().getEmail())
+                    .doctorName(updated.getDoctor().getName())
+                    .branchName(updated.getBranch().getName())
+                    .appointmentTime(updated.getAppointmentTime())
+                    .notes(updated.getNotes())
+                    .build());
+        }
+
+        if (request.getStatus() == AppointmentStatus.COMPLETED) {
+            appointmentEventProducer.publishAppointmentCompleted(HospitoEvent.builder()
+                    .appointmentId(updated.getId())
+                    .patientName(updated.getPatient().getName())
+                    .patientEmail(updated.getPatient().getUser().getEmail())
+                    .doctorName(updated.getDoctor().getName())
+                    .branchName(updated.getBranch().getName())
+                    .appointmentTime(updated.getAppointmentTime())
+                    .notes(updated.getNotes())
+                    .build());
+        }
+
+        return mapToResponse(updated);
     }
 
     @Override
@@ -181,10 +220,10 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         // Can only cancel PENDING or CONFIRMED
         if (appointment.getStatus() == AppointmentStatus.COMPLETED ||
-            appointment.getStatus() == AppointmentStatus.NO_SHOW ||
-            appointment.getStatus() == AppointmentStatus.CANCELLED) {
+                appointment.getStatus() == AppointmentStatus.NO_SHOW ||
+                appointment.getStatus() == AppointmentStatus.CANCELLED) {
             throw new BusinessRuleException(
-                "Cannot cancel an appointment with status: " + appointment.getStatus());
+                    "Cannot cancel an appointment with status: " + appointment.getStatus());
         }
 
         appointment.setStatus(AppointmentStatus.CANCELLED);
@@ -203,17 +242,17 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         boolean valid = switch (current) {
             case PENDING -> next == AppointmentStatus.CONFIRMED ||
-                           next == AppointmentStatus.CANCELLED;
+                    next == AppointmentStatus.CANCELLED;
             case CONFIRMED -> next == AppointmentStatus.IN_PROGRESS ||
-                             next == AppointmentStatus.CANCELLED ||
-                             next == AppointmentStatus.NO_SHOW;
+                    next == AppointmentStatus.CANCELLED ||
+                    next == AppointmentStatus.NO_SHOW;
             case IN_PROGRESS -> next == AppointmentStatus.COMPLETED;
             case COMPLETED, CANCELLED, NO_SHOW -> false;
         };
 
         if (!valid) {
             throw new BusinessRuleException(
-                "Invalid status transition from " + current + " to " + next);
+                    "Invalid status transition from " + current + " to " + next);
         }
     }
 

@@ -23,62 +23,58 @@ import java.util.Map;
 @EnableCaching
 public class RedisConfig {
 
-    @Bean
-    public ObjectMapper redisObjectMapper() {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
-        mapper.activateDefaultTyping(
-                LaissezFaireSubTypeValidator.instance,
-                ObjectMapper.DefaultTyping.NON_FINAL,
-                JsonTypeInfo.As.PROPERTY
-        );
-        return mapper;
-    }
+        private ObjectMapper redisObjectMapper() {
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.registerModule(new JavaTimeModule());
+                mapper.activateDefaultTyping(
+                                LaissezFaireSubTypeValidator.instance,
+                                ObjectMapper.DefaultTyping.NON_FINAL,
+                                JsonTypeInfo.As.PROPERTY);
+                return mapper;
+        }
 
-    @Bean
-    public RedisTemplate<String, Object> redisTemplate(
-            RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, Object> template = new RedisTemplate<>();
-        template.setConnectionFactory(connectionFactory);
-        template.setKeySerializer(new StringRedisSerializer());
-        template.setValueSerializer(
-                new GenericJackson2JsonRedisSerializer(redisObjectMapper()));
-        template.setHashKeySerializer(new StringRedisSerializer());
-        template.setHashValueSerializer(
-                new GenericJackson2JsonRedisSerializer(redisObjectMapper()));
-        return template;
-    }
+        @Bean
+        public RedisTemplate<String, Object> redisTemplate(
+                        RedisConnectionFactory connectionFactory) {
+                RedisTemplate<String, Object> template = new RedisTemplate<>();
+                template.setConnectionFactory(connectionFactory);
+                template.setKeySerializer(new StringRedisSerializer());
+                template.setValueSerializer(
+                                new GenericJackson2JsonRedisSerializer(redisObjectMapper()));
+                template.setHashKeySerializer(new StringRedisSerializer());
+                template.setHashValueSerializer(
+                                new GenericJackson2JsonRedisSerializer(redisObjectMapper()));
+                return template;
+        }
 
-    @Bean
-    public RedisCacheManager cacheManager(
-            RedisConnectionFactory connectionFactory) {
+        @Bean
+        public RedisCacheManager cacheManager(
+                        RedisConnectionFactory connectionFactory) {
 
-        GenericJackson2JsonRedisSerializer serializer =
-                new GenericJackson2JsonRedisSerializer(redisObjectMapper());
+                GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(
+                                redisObjectMapper());
 
-        RedisCacheConfiguration defaultConfig = RedisCacheConfiguration
-                .defaultCacheConfig()
-                .entryTtl(Duration.ofMinutes(10))
-                .serializeKeysWith(RedisSerializationContext
-                        .SerializationPair
-                        .fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(RedisSerializationContext
-                        .SerializationPair
-                        .fromSerializer(serializer))
-                .disableCachingNullValues();
+                RedisCacheConfiguration defaultConfig = RedisCacheConfiguration
+                                .defaultCacheConfig()
+                                .entryTtl(Duration.ofMinutes(10))
+                                .serializeKeysWith(RedisSerializationContext.SerializationPair
+                                                .fromSerializer(new StringRedisSerializer()))
+                                .serializeValuesWith(RedisSerializationContext.SerializationPair
+                                                .fromSerializer(serializer))
+                                .disableCachingNullValues();
 
-        // Per-cache TTL configuration
-        Map<String, RedisCacheConfiguration> cacheConfigs = new HashMap<>();
-        cacheConfigs.put("doctors",
-                defaultConfig.entryTtl(Duration.ofMinutes(10)));
-        cacheConfigs.put("branches",
-                defaultConfig.entryTtl(Duration.ofMinutes(30)));
-        cacheConfigs.put("chains",
-                defaultConfig.entryTtl(Duration.ofMinutes(60)));
+                // Per-cache TTL configuration
+                Map<String, RedisCacheConfiguration> cacheConfigs = new HashMap<>();
+                cacheConfigs.put("doctors",
+                                defaultConfig.entryTtl(Duration.ofMinutes(10)));
+                cacheConfigs.put("branches",
+                                defaultConfig.entryTtl(Duration.ofMinutes(30)));
+                cacheConfigs.put("chains",
+                                defaultConfig.entryTtl(Duration.ofMinutes(60)));
 
-        return RedisCacheManager.builder(connectionFactory)
-                .cacheDefaults(defaultConfig)
-                .withInitialCacheConfigurations(cacheConfigs)
-                .build();
-    }
+                return RedisCacheManager.builder(connectionFactory)
+                                .cacheDefaults(defaultConfig)
+                                .withInitialCacheConfigurations(cacheConfigs)
+                                .build();
+        }
 }
