@@ -21,6 +21,8 @@ import com.yagnik.hospito.common.exception.BusinessRuleException;
 import com.yagnik.hospito.common.exception.ResourceNotFoundException;
 import com.yagnik.hospito.doctor.entity.Doctor;
 import com.yagnik.hospito.patient.entity.Patient;
+import com.yagnik.hospito.billing.producer.BillingEventProducer;
+import com.yagnik.hospito.auth.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -48,6 +50,7 @@ class BillingServiceTest {
     @Mock private AppointmentRepository appointmentRepository;
     @Mock private PaymentStrategyFactory strategyFactory;
     @Mock private PaymentStrategy mockStrategy;
+    @Mock private BillingEventProducer billingEventProducer;
 
     @InjectMocks
     private BillingServiceImpl billingService;
@@ -67,6 +70,7 @@ class BillingServiceTest {
 
         mockPatient = Patient.builder()
                 .id(1L).name("Rahul Mehta").isActive(true)
+                .user(User.builder().email("rahul@hospito.com").build())
                 .visitedBranches(new java.util.HashSet<>())
                 .build();
 

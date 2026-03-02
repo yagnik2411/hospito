@@ -15,6 +15,8 @@ import com.yagnik.hospito.doctor.entity.Doctor;
 import com.yagnik.hospito.doctor.repository.DoctorRepository;
 import com.yagnik.hospito.patient.entity.Patient;
 import com.yagnik.hospito.patient.repository.PatientRepository;
+import com.yagnik.hospito.appointment.producer.AppointmentEventProducer;
+import com.yagnik.hospito.auth.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -44,6 +46,7 @@ class AppointmentServiceTest {
     @Mock private PatientRepository patientRepository;
     @Mock private DoctorRepository doctorRepository;
     @Mock private BranchRepository branchRepository;
+    @Mock private AppointmentEventProducer appointmentEventProducer;
 
     @InjectMocks
     private AppointmentServiceImpl appointmentService;
@@ -73,6 +76,7 @@ class AppointmentServiceTest {
         mockPatient = Patient.builder()
                 .id(1L).name("Rahul Mehta")
                 .isActive(true)
+                .user(User.builder().email("rahul@hospito.com").build())
                 .visitedBranches(new HashSet<>())
                 .build();
 
