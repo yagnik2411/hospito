@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import EndpointCard, { CodeBlock } from '../components/EndpointCard'
 import styles from './Docs.module.css'
 
@@ -15,12 +15,52 @@ const GROUPS = [
   { id: 'billing',     label: 'Billing',       sidebar: 'Billing' },
 ]
 
+// Flat searchable index of all endpoints
+const ALL_ENDPOINTS = [
+  { group: 'auth',        method: 'POST',  path: '/api/v1/auth/register',              summary: 'Create a new user account',        tags: 'register user auth public' },
+  { group: 'auth',        method: 'POST',  path: '/api/v1/auth/login',                 summary: 'Authenticate and receive JWT',      tags: 'login jwt token public' },
+  { group: 'chain',       method: 'POST',  path: '/api/v1/chains',                     summary: 'Create hospital chain',             tags: 'chain create super_admin' },
+  { group: 'chain',       method: 'GET',   path: '/api/v1/chains',                     summary: 'Get chain details',                 tags: 'chain get' },
+  { group: 'chain',       method: 'PUT',   path: '/api/v1/chains/{id}',                summary: 'Update chain details',              tags: 'chain update' },
+  { group: 'branch',      method: 'POST',  path: '/api/v1/branches',                   summary: 'Create a branch',                   tags: 'branch create' },
+  { group: 'branch',      method: 'GET',   path: '/api/v1/branches',                   summary: 'List all branches',                 tags: 'branch list get' },
+  { group: 'branch',      method: 'DELETE',path: '/api/v1/branches/{id}',              summary: 'Soft-delete a branch',              tags: 'branch delete' },
+  { group: 'doctor',      method: 'POST',  path: '/api/v1/doctors',                    summary: 'Register a doctor',                 tags: 'doctor register create' },
+  { group: 'doctor',      method: 'PUT',   path: '/api/v1/doctors/{id}/availability',  summary: 'Set weekly availability',           tags: 'doctor availability schedule' },
+  { group: 'doctor',      method: 'PATCH', path: '/api/v1/doctors/{id}/transfer',      summary: 'Transfer to another branch',        tags: 'doctor transfer' },
+  { group: 'patient',     method: 'POST',  path: '/api/v1/patients/register',          summary: 'Register a patient',               tags: 'patient register public' },
+  { group: 'patient',     method: 'POST',  path: '/api/v1/patients/{id}/insurance',    summary: 'Add insurance policy',              tags: 'patient insurance' },
+  { group: 'patient',     method: 'GET',   path: '/api/v1/patients/{id}/medical-records', summary: 'Get medical records',           tags: 'patient medical records' },
+  { group: 'patient',     method: 'POST',  path: '/api/v1/patients/{id}/medical-records', summary: 'Add medical record',            tags: 'patient medical records doctor' },
+  { group: 'appointment', method: 'POST',  path: '/api/v1/appointments',               summary: 'Book an appointment',              tags: 'appointment book create kafka' },
+  { group: 'appointment', method: 'PATCH', path: '/api/v1/appointments/{id}/status',   summary: 'Update appointment status',        tags: 'appointment status state machine' },
+  { group: 'appointment', method: 'GET',   path: '/api/v1/appointments',               summary: 'List appointments',                tags: 'appointment list get' },
+  { group: 'billing',     method: 'POST',  path: '/api/v1/bills',                      summary: 'Create a bill',                    tags: 'billing bill create' },
+  { group: 'billing',     method: 'POST',  path: '/api/v1/bills/{id}/pay',             summary: 'Process payment',                  tags: 'billing payment pay cash card upi insurance kafka' },
+  { group: 'billing',     method: 'PATCH', path: '/api/v1/bills/{id}/waive',           summary: 'Waive a bill',                     tags: 'billing waive' },
+]
+
+const METHOD_COLOR = { GET:'#4D9EFF', POST:'#00FFB2', PUT:'#FFD166', PATCH:'#A78BFA', DELETE:'#FF4D6A' }
+
 export default function Docs() {
   const [active, setActive] = useState('intro')
+  const [search, setSearch] = useState('')
   const refs = useRef({})
+
+  const searchResults = useMemo(() => {
+    if (!search.trim()) return []
+    const q = search.toLowerCase()
+    return ALL_ENDPOINTS.filter(ep =>
+      ep.path.toLowerCase().includes(q) ||
+      ep.summary.toLowerCase().includes(q) ||
+      ep.method.toLowerCase().includes(q) ||
+      ep.tags.toLowerCase().includes(q)
+    )
+  }, [search])
 
   const scrollTo = (id) => {
     setActive(id)
+    setSearch('')
     refs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
@@ -53,6 +93,49 @@ export default function Docs() {
 
       {/* ── CONTENT ── */}
       <main className={styles.content}>
+
+        {/* ── SEARCH BAR ── */}
+        <div className={styles.searchWrap}>
+          <span className={styles.searchIcon}>⌕</span>
+          <input
+            className={styles.searchInput}
+            type="text"
+            placeholder="Search endpoints — try 'appointment', 'POST', 'kafka'..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          {search && (
+            <button className={styles.searchClear} onClick={() => setSearch('')}>✕</button>
+          )}
+        </div>
+
+        {/* ── SEARCH RESULTS ── */}
+        {search && (
+          <div className={styles.searchResults}>
+            {searchResults.length === 0 ? (
+              <div className={styles.searchEmpty}>No endpoints match "{search}"</div>
+            ) : (
+              <>
+                <div className={styles.searchCount}>{searchResults.length} result{searchResults.length !== 1 ? 's' : ''}</div>
+                {searchResults.map((ep, i) => (
+                  <button
+                    key={i}
+                    className={styles.searchResultItem}
+                    onClick={() => scrollTo(ep.group)}
+                  >
+                    <span
+                      className={styles.searchMethod}
+                      style={{ color: METHOD_COLOR[ep.method] }}
+                    >{ep.method}</span>
+                    <span className={styles.searchPath}>{ep.path}</span>
+                    <span className={styles.searchSummary}>{ep.summary}</span>
+                    <span className={styles.searchJump}>Jump →</span>
+                  </button>
+                ))}
+              </>
+            )}
+          </div>
+        )}
 
         {/* INTRO */}
         <Section id="intro">

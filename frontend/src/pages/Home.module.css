@@ -214,3 +214,32 @@
   background:radial-gradient(ellipse,rgba(0,255,178,0.055) 0%,transparent 70%);
   pointer-events:none;
 }
+
+/* ── MOBILE RESPONSIVE ── */
+@media (max-width: 768px) {
+  .hero {
+    padding: 48px 24px 40px;
+    min-height: auto;
+  }
+  .heroTitle { letter-spacing: -1.5px; }
+  .heroActions { flex-direction: column; }
+  .btnPrimary, .btnOutline { width: 100%; justify-content: center; }
+
+  .statsBar { grid-template-columns: repeat(2, 1fr); }
+  .statItem { padding: 24px 20px; }
+  .statNum  { font-size: 36px; }
+
+  .section, .techSection, .archSection, .ctaSection { padding: 60px 24px; }
+
+  .featuresGrid { grid-template-columns: 1fr; }
+  .featureCard  { padding: 28px 24px; }
+
+  .sectionTitle   { font-size: 32px; letter-spacing: -1px; }
+  .sectionTitleSm { font-size: 26px; }
+}
+
+@media (max-width: 480px) {
+  .statsBar { grid-template-columns: 1fr 1fr; }
+  .techGrid { gap: 8px; }
+  .techPill { font-size: 12px; padding: 7px 14px; }
+}

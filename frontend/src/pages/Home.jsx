@@ -1,4 +1,6 @@
 import Footer from '../components/Footer'
+import ArchDiagram from '../components/ArchDiagram'
+import ApiTester from '../components/ApiTester'
 import styles from './Home.module.css'
 
 const SWAGGER = 'https://hospito-production.up.railway.app/swagger-ui/index.html'
@@ -24,13 +26,6 @@ const TECH = [
   { label: 'Railway',           color: '#7B61FF' },
   { label: 'SpringDoc OpenAPI', color: '#85EA2D' },
   { label: 'JUnit 5 + Mockito', color: '#25A162' },
-]
-
-const ARCH = [
-  { label: 'Client',  items: ['HTTPS Request', '→', 'Railway Public URL'] },
-  { label: 'API',     items: ['hospito-app :8080', '→', 'JWT Filter', '→', 'Controllers', '→', 'Services'] },
-  { label: 'Data',    items: ['PostgreSQL :5432', '·', 'Redis :6379', '·', 'Kafka :29092'] },
-  { label: 'Events',  items: ['appointment-events', '·', 'billing-events', '→', 'notification-service'] },
 ]
 
 export default function Home({ setPage }) {
@@ -150,25 +145,24 @@ fetch('https://hospito-production
         </div>
       </section>
 
-      {/* ── ARCHITECTURE ── */}
+      {/* ── ARCHITECTURE (animated) ── */}
       <section className={styles.archSection}>
         <div className={styles.sectionLabel}>// Architecture</div>
         <h2 className={styles.sectionTitleSm}>How it all fits<br />together</h2>
-        <div className={styles.archDiagram}>
-          {ARCH.map(row => (
-            <div key={row.label} className={styles.archRow}>
-              <span className={styles.archLabel}>{row.label}</span>
-              {row.items.map((item, i) => (
-                item === '→' || item === '·'
-                  ? <span key={i} className={styles.archArrow}>{item}</span>
-                  : <div key={i} className={`${styles.archBox} ${
-                      item === 'hospito-app :8080' || item === 'notification-service' || item === 'Railway Public URL'
-                        ? styles.archPrimary : ''
-                    }`}>{item}</div>
-              ))}
-            </div>
-          ))}
-        </div>
+        <p className={styles.sectionSub} style={{ marginBottom: 0 }}>
+          Animated Kafka packets show real async event flow between hospito-app and the notification microservice.
+        </p>
+        <ArchDiagram />
+      </section>
+
+      {/* ── LIVE API TESTER ── */}
+      <section className={styles.techSection}>
+        <div className={styles.sectionLabel}>// Try It Live</div>
+        <h2 className={styles.sectionTitleSm}>Hit the real API<br />right here</h2>
+        <p className={styles.sectionSub} style={{ marginBottom: 0 }}>
+          Every request goes to the live Railway deployment. Login first — the token auto-fills for all protected endpoints.
+        </p>
+        <ApiTester />
       </section>
 
       {/* ── CTA ── */}
