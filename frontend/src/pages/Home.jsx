@@ -3,8 +3,8 @@ import ArchDiagram from '../components/ArchDiagram'
 import ApiTester from '../components/ApiTester'
 import styles from './Home.module.css'
 
-const SWAGGER = 'https://hospito-production.up.railway.app/swagger-ui/index.html'
-const GITHUB  = 'https://github.com/yagnik2411/hospito'
+const SWAGGER = 'https://hospito.up.railway.app/swagger-ui/index.html'
+const GITHUB = 'https://github.com/yagnik2411/hospito'
 
 const FEATURES = [
   { icon: '🔐', name: 'Auth + RBAC', desc: 'JWT stateless authentication with Spring Security 6. Four roles with method-level @PreAuthorize enforcement across every endpoint.', tag: 'Spring Security' },
@@ -16,14 +16,14 @@ const FEATURES = [
 ]
 
 const TECH = [
-  { label: 'Java 17',           color: '#F89820' },
-  { label: 'Spring Boot 3.3',   color: '#6DB33F' },
-  { label: 'PostgreSQL 15',     color: '#336791' },
-  { label: 'Redis 7',           color: '#DC382D' },
-  { label: 'Apache Kafka',      color: '#808080' },
-  { label: 'Docker',            color: '#2496ED' },
-  { label: 'GitHub Actions',    color: '#2088FF' },
-  { label: 'Railway',           color: '#7B61FF' },
+  { label: 'Java 17', color: '#F89820' },
+  { label: 'Spring Boot 3.3', color: '#6DB33F' },
+  { label: 'PostgreSQL 15', color: '#336791' },
+  { label: 'Redis 7', color: '#DC382D' },
+  { label: 'Apache Kafka', color: '#808080' },
+  { label: 'Docker', color: '#2496ED' },
+  { label: 'GitHub Actions', color: '#2088FF' },
+  { label: 'Railway', color: '#7B61FF' },
   { label: 'SpringDoc OpenAPI', color: '#85EA2D' },
   { label: 'JUnit 5 + Mockito', color: '#25A162' },
 ]
@@ -72,8 +72,7 @@ export default function Home({ setPage }) {
             </div>
             <div className={styles.codeBody}>
               <pre>{`// Book an appointment
-fetch('https://hospito-production
-  .up.railway.app/api/v1
+fetch('https://hospito.up.railway.app/api/v1
   /appointments', {
   method: 'POST',
   headers: {
@@ -100,9 +99,9 @@ fetch('https://hospito-production
       <div className={styles.statsBar}>
         {[
           { num: '30+', label: 'REST Endpoints' },
-          { num: '4',   label: 'User Roles' },
-          { num: '6',   label: 'Live Services' },
-          { num: '26',  label: 'Tests Passing' },
+          { num: '4', label: 'User Roles' },
+          { num: '6', label: 'Live Services' },
+          { num: '26', label: 'Tests Passing' },
         ].map(s => (
           <div key={s.label} className={styles.statItem}>
             <div className={styles.statNum}>{s.num}</div>

@@ -11,8 +11,8 @@ export default function Footer() {
       </p>
       <div className={styles.links}>
         <a href="https://github.com/yagnik2411/hospito" target="_blank" rel="noreferrer">GitHub</a>
-        <a href="https://hospito-production.up.railway.app/swagger-ui/index.html" target="_blank" rel="noreferrer">Swagger</a>
-        <a href="https://hospito-production.up.railway.app/actuator/health" target="_blank" rel="noreferrer">Health</a>
+        <a href="https://hospito.up.railway.app/swagger-ui/index.html" target="_blank" rel="noreferrer">Swagger</a>
+        <a href="https://hospito.up.railway.app/actuator/health" target="_blank" rel="noreferrer">Health</a>
       </div>
     </footer>
   )

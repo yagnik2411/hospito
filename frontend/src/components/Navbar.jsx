@@ -1,6 +1,6 @@
 import styles from './Navbar.module.css'
 
-const SWAGGER_URL = 'https://hospito-production.up.railway.app/swagger-ui/index.html'
+const SWAGGER_URL = 'https://hospito.up.railway.app/swagger-ui/index.html'
 
 export default function Navbar({ page, setPage }) {
   return (

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import styles from './ApiTester.module.css'
 
-const BASE = 'https://hospito-production.up.railway.app'
+const BASE = 'https://hospito.up.railway.app'
 
 const ENDPOINTS = [
   {

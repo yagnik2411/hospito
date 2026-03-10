@@ -2,45 +2,45 @@ import { useState, useRef, useMemo } from 'react'
 import EndpointCard, { CodeBlock } from '../components/EndpointCard'
 import styles from './Docs.module.css'
 
-const SWAGGER = 'https://hospito-production.up.railway.app/swagger-ui/index.html'
+const SWAGGER = 'https://hospito.up.railway.app/swagger-ui/index.html'
 
 const GROUPS = [
-  { id: 'intro',       label: 'Overview',     sidebar: 'Introduction' },
-  { id: 'auth',        label: 'Auth',          sidebar: 'Authentication' },
-  { id: 'chain',       label: 'Chain',         sidebar: 'Hospital Chain' },
-  { id: 'branch',      label: 'Branch',        sidebar: 'Branches' },
-  { id: 'doctor',      label: 'Doctor',        sidebar: 'Doctors' },
-  { id: 'patient',     label: 'Patient',       sidebar: 'Patients' },
-  { id: 'appointment', label: 'Appointment',   sidebar: 'Appointments' },
-  { id: 'billing',     label: 'Billing',       sidebar: 'Billing' },
+  { id: 'intro', label: 'Overview', sidebar: 'Introduction' },
+  { id: 'auth', label: 'Auth', sidebar: 'Authentication' },
+  { id: 'chain', label: 'Chain', sidebar: 'Hospital Chain' },
+  { id: 'branch', label: 'Branch', sidebar: 'Branches' },
+  { id: 'doctor', label: 'Doctor', sidebar: 'Doctors' },
+  { id: 'patient', label: 'Patient', sidebar: 'Patients' },
+  { id: 'appointment', label: 'Appointment', sidebar: 'Appointments' },
+  { id: 'billing', label: 'Billing', sidebar: 'Billing' },
 ]
 
 // Flat searchable index of all endpoints
 const ALL_ENDPOINTS = [
-  { group: 'auth',        method: 'POST',  path: '/api/v1/auth/register',              summary: 'Create a new user account',        tags: 'register user auth public' },
-  { group: 'auth',        method: 'POST',  path: '/api/v1/auth/login',                 summary: 'Authenticate and receive JWT',      tags: 'login jwt token public' },
-  { group: 'chain',       method: 'POST',  path: '/api/v1/chains',                     summary: 'Create hospital chain',             tags: 'chain create super_admin' },
-  { group: 'chain',       method: 'GET',   path: '/api/v1/chains',                     summary: 'Get chain details',                 tags: 'chain get' },
-  { group: 'chain',       method: 'PUT',   path: '/api/v1/chains/{id}',                summary: 'Update chain details',              tags: 'chain update' },
-  { group: 'branch',      method: 'POST',  path: '/api/v1/branches',                   summary: 'Create a branch',                   tags: 'branch create' },
-  { group: 'branch',      method: 'GET',   path: '/api/v1/branches',                   summary: 'List all branches',                 tags: 'branch list get' },
-  { group: 'branch',      method: 'DELETE',path: '/api/v1/branches/{id}',              summary: 'Soft-delete a branch',              tags: 'branch delete' },
-  { group: 'doctor',      method: 'POST',  path: '/api/v1/doctors',                    summary: 'Register a doctor',                 tags: 'doctor register create' },
-  { group: 'doctor',      method: 'PUT',   path: '/api/v1/doctors/{id}/availability',  summary: 'Set weekly availability',           tags: 'doctor availability schedule' },
-  { group: 'doctor',      method: 'PATCH', path: '/api/v1/doctors/{id}/transfer',      summary: 'Transfer to another branch',        tags: 'doctor transfer' },
-  { group: 'patient',     method: 'POST',  path: '/api/v1/patients/register',          summary: 'Register a patient',               tags: 'patient register public' },
-  { group: 'patient',     method: 'POST',  path: '/api/v1/patients/{id}/insurance',    summary: 'Add insurance policy',              tags: 'patient insurance' },
-  { group: 'patient',     method: 'GET',   path: '/api/v1/patients/{id}/medical-records', summary: 'Get medical records',           tags: 'patient medical records' },
-  { group: 'patient',     method: 'POST',  path: '/api/v1/patients/{id}/medical-records', summary: 'Add medical record',            tags: 'patient medical records doctor' },
-  { group: 'appointment', method: 'POST',  path: '/api/v1/appointments',               summary: 'Book an appointment',              tags: 'appointment book create kafka' },
-  { group: 'appointment', method: 'PATCH', path: '/api/v1/appointments/{id}/status',   summary: 'Update appointment status',        tags: 'appointment status state machine' },
-  { group: 'appointment', method: 'GET',   path: '/api/v1/appointments',               summary: 'List appointments',                tags: 'appointment list get' },
-  { group: 'billing',     method: 'POST',  path: '/api/v1/bills',                      summary: 'Create a bill',                    tags: 'billing bill create' },
-  { group: 'billing',     method: 'POST',  path: '/api/v1/bills/{id}/pay',             summary: 'Process payment',                  tags: 'billing payment pay cash card upi insurance kafka' },
-  { group: 'billing',     method: 'PATCH', path: '/api/v1/bills/{id}/waive',           summary: 'Waive a bill',                     tags: 'billing waive' },
+  { group: 'auth', method: 'POST', path: '/api/v1/auth/register', summary: 'Create a new user account', tags: 'register user auth public' },
+  { group: 'auth', method: 'POST', path: '/api/v1/auth/login', summary: 'Authenticate and receive JWT', tags: 'login jwt token public' },
+  { group: 'chain', method: 'POST', path: '/api/v1/chains', summary: 'Create hospital chain', tags: 'chain create super_admin' },
+  { group: 'chain', method: 'GET', path: '/api/v1/chains', summary: 'Get chain details', tags: 'chain get' },
+  { group: 'chain', method: 'PUT', path: '/api/v1/chains/{id}', summary: 'Update chain details', tags: 'chain update' },
+  { group: 'branch', method: 'POST', path: '/api/v1/branches', summary: 'Create a branch', tags: 'branch create' },
+  { group: 'branch', method: 'GET', path: '/api/v1/branches', summary: 'List all branches', tags: 'branch list get' },
+  { group: 'branch', method: 'DELETE', path: '/api/v1/branches/{id}', summary: 'Soft-delete a branch', tags: 'branch delete' },
+  { group: 'doctor', method: 'POST', path: '/api/v1/doctors', summary: 'Register a doctor', tags: 'doctor register create' },
+  { group: 'doctor', method: 'PUT', path: '/api/v1/doctors/{id}/availability', summary: 'Set weekly availability', tags: 'doctor availability schedule' },
+  { group: 'doctor', method: 'PATCH', path: '/api/v1/doctors/{id}/transfer', summary: 'Transfer to another branch', tags: 'doctor transfer' },
+  { group: 'patient', method: 'POST', path: '/api/v1/patients/register', summary: 'Register a patient', tags: 'patient register public' },
+  { group: 'patient', method: 'POST', path: '/api/v1/patients/{id}/insurance', summary: 'Add insurance policy', tags: 'patient insurance' },
+  { group: 'patient', method: 'GET', path: '/api/v1/patients/{id}/medical-records', summary: 'Get medical records', tags: 'patient medical records' },
+  { group: 'patient', method: 'POST', path: '/api/v1/patients/{id}/medical-records', summary: 'Add medical record', tags: 'patient medical records doctor' },
+  { group: 'appointment', method: 'POST', path: '/api/v1/appointments', summary: 'Book an appointment', tags: 'appointment book create kafka' },
+  { group: 'appointment', method: 'PATCH', path: '/api/v1/appointments/{id}/status', summary: 'Update appointment status', tags: 'appointment status state machine' },
+  { group: 'appointment', method: 'GET', path: '/api/v1/appointments', summary: 'List appointments', tags: 'appointment list get' },
+  { group: 'billing', method: 'POST', path: '/api/v1/bills', summary: 'Create a bill', tags: 'billing bill create' },
+  { group: 'billing', method: 'POST', path: '/api/v1/bills/{id}/pay', summary: 'Process payment', tags: 'billing payment pay cash card upi insurance kafka' },
+  { group: 'billing', method: 'PATCH', path: '/api/v1/bills/{id}/waive', summary: 'Waive a bill', tags: 'billing waive' },
 ]
 
-const METHOD_COLOR = { GET:'#4D9EFF', POST:'#00FFB2', PUT:'#FFD166', PATCH:'#A78BFA', DELETE:'#FF4D6A' }
+const METHOD_COLOR = { GET: '#4D9EFF', POST: '#00FFB2', PUT: '#FFD166', PATCH: '#A78BFA', DELETE: '#FF4D6A' }
 
 export default function Docs() {
   const [active, setActive] = useState('intro')
@@ -150,7 +150,7 @@ export default function Docs() {
 
           <div className={styles.baseUrlBar}>
             <span className={styles.baseLabel}>BASE URL</span>
-            <span className={styles.baseVal}>https://hospito-production.up.railway.app</span>
+            <span className={styles.baseVal}>https://hospito.up.railway.app</span>
           </div>
 
           <div className={styles.authCard}>
@@ -166,13 +166,13 @@ export default function Docs() {
               <CodeBlock
                 lang="bash"
                 code={`# 1. Login to get your token
-curl -X POST 'https://hospito-production.up.railway.app/api/v1/auth/login' \\
+curl -X POST 'https://hospito.up.railway.app/api/v1/auth/login' \\
   -H 'Content-Type: application/json' \\
   -d '{"email":"admin@hospito.com","password":"password"}'
 
 # 2. Use token in all subsequent requests
 curl -H 'Authorization: Bearer <your-token>' \\
-  https://hospito-production.up.railway.app/api/v1/branches`}
+  https://hospito.up.railway.app/api/v1/branches`}
               />
             </div>
           </div>
